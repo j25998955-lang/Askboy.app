@@ -498,12 +498,12 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // Configuración de Firebase, obtenida del entorno de Canvas
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(__firebase_config);
+        // El entorno de Canvas proporciona la configuración de Firebase y un token de autenticación.
+        // Ya no necesitas insertarlos manualmente.
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
         // Inicializar Firebase
@@ -529,13 +529,14 @@
             'veteran': 'https://placehold.co/80x80/9b59b6/ffffff?text=V'
         };
 
-        // Referencias a colecciones y documentos de Firestore
-        const questionsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'questions');
-        const answersCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'answers');
+        // Referencias a colecciones y documentos de Firestore.
+        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'askboys-app-id';
+        const questionsCollectionRef = collection(db, 'artifacts', APP_ID, 'public', 'data', 'questions');
+        const answersCollectionRef = collection(db, 'artifacts', APP_ID, 'public', 'data', 'answers');
         
         // Función para obtener la referencia al documento del usuario
         function getUserDataDocRef(uid) {
-            return doc(db, 'artifacts', appId, 'users', uid);
+            return doc(db, 'artifacts', APP_ID, 'users', uid);
         }
 
         // Función para cargar los datos del usuario de Firestore
@@ -705,7 +706,7 @@
         
         // Función para reaccionar a preguntas o respuestas
         async function reactToItem(itemId, collectionName) {
-            const itemRef = doc(db, 'artifacts', appId, 'public', 'data', collectionName, itemId);
+            const itemRef = doc(db, 'artifacts', APP_ID, 'public', 'data', collectionName, itemId);
             const itemSnap = await getDoc(itemRef);
             
             if (itemSnap.exists()) {
@@ -885,7 +886,7 @@
                     setupMobileTabs();
 
                 } else {
-                    console.log("No hay usuario autenticado. Intentando autenticar de forma anónima o con token.");
+                    console.log("No hay usuario autenticado. Intentando autenticar de forma anónima.");
                     if (initialAuthToken) {
                         await signInWithCustomToken(auth, initialAuthToken);
                     } else {
