@@ -446,7 +446,6 @@
             <ul id="questionsList">
                 <!-- Las preguntas se cargarán aquí -->
             </ul>
-            <button id="loadMoreBtn" class="load-more-btn">Cargar más</button>
         </section>
 
         <section id="askSection" class="column">
@@ -499,14 +498,14 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // Variables globales proporcionadas por el entorno de Canvas
+        // Configuración de Firebase, obtenida del entorno de Canvas
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const firebaseConfig = JSON.parse(__firebase_config);
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
+        
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -560,7 +559,6 @@
                 }
             } catch (e) {
                 console.error("Error al cargar datos del usuario:", e);
-                // Propagamos el error para manejarlo en la función de autenticación
                 throw e;
             }
         }
@@ -607,7 +605,7 @@
             
             const avatarImg = document.getElementById('userAvatar');
             avatarImg.src = AVATAR_URLS[userData.avatar] || AVATAR_URLS['initial'];
-            avatarImg.alt = `Avatar de ${userData.avatar}`;
+            avatarImg.alt = `Avatar del usuario`;
             
             const badgesList = document.getElementById('userBadges');
             badgesList.innerHTML = '';
@@ -850,16 +848,8 @@
         });
         
         // Autenticación y Carga Inicial
-        async function authenticateAndLoad() {
+        onAuthStateChanged(auth, async (user) => {
             try {
-                let userCredential;
-                if (initialAuthToken) {
-                    userCredential = await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    userCredential = await signInAnonymously(auth);
-                }
-                const user = userCredential.user;
-
                 if (user) {
                     userId = user.uid;
                     await loadUserData();
@@ -895,16 +885,18 @@
                     setupMobileTabs();
 
                 } else {
-                    console.error("La autenticación falló y no se pudo obtener el usuario.");
-                    document.getElementById('loading-container').innerHTML = `<p style="color: red;">Error: No se pudo autenticar al usuario. Intente recargar.</p>`;
+                    console.log("No hay usuario autenticado. Intentando autenticar de forma anónima o con token.");
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
                 }
             } catch (e) {
                 console.error("Error en la carga inicial:", e);
                 document.getElementById('loading-container').innerHTML = `<p style="color: red;">Error al iniciar la aplicación. Revise la consola.</p>`;
             }
-        }
-        
-        authenticateAndLoad();
+        });
     </script>
 </body>
 </html>
